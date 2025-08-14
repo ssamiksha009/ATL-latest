@@ -10,7 +10,6 @@ const { spawn } = require('child_process');
 
 // Create express app
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -360,7 +359,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-/* app.post('/api/register', async (req, res) => {
+ app.post('/api/register', async (req, res) => {
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
@@ -400,7 +399,7 @@ app.post('/api/login', async (req, res) => {
         }
     }
 });
-*/
+
 // Token verification endpoint
 app.get('/api/verify-token', authenticateToken, (req, res) => {
     // If authentication middleware passes, token is valid
@@ -1915,6 +1914,30 @@ app.get('/api/manager/recent-activity', authenticateToken, requireManager, (req,
     res.json({ success: true, activities: [] });
 });
 
+
+// Add new endpoint to check if project folder exists
+app.post('/api/check-project-exists', (req, res) => {
+    const { projectName, protocol } = req.body;
+
+    if (!projectName || !protocol) {
+        return res.status(400).json({
+            success: false,
+            message: 'Project name and protocol are required'
+        });
+    }
+
+    const combinedFolderName = `${projectName}_${protocol}`;
+    const projectPath = path.join(__dirname, 'projects', combinedFolderName);
+
+    const exists = fs.existsSync(projectPath);
+
+    res.json({
+        success: true,
+        exists: exists,
+        folderName: combinedFolderName
+    });
+});
+
 // 3) For any unknown /api/* route, return a JSON 404 (not HTML)
 app.all('/api/*', (_req, res) => res.status(404).json({ success: false, message: 'Not found' }));
 
@@ -2573,25 +2596,3 @@ app.post('/api/manager/reset-password', authenticateToken, requireManager, async
     }
 });
 
-// Add new endpoint to check if project folder exists
-app.post('/api/check-project-exists', (req, res) => {
-    const { projectName, protocol } = req.body;
-
-    if (!projectName || !protocol) {
-        return res.status(400).json({
-            success: false,
-            message: 'Project name and protocol are required'
-        });
-    }
-
-    const combinedFolderName = `${projectName}_${protocol}`;
-    const projectPath = path.join(__dirname, 'projects', combinedFolderName);
-
-    const exists = fs.existsSync(projectPath);
-
-    res.json({
-        success: true,
-        exists: exists,
-        folderName: combinedFolderName
-    });
-});
