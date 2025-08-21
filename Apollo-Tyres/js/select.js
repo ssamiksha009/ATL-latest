@@ -451,8 +451,29 @@ async function runSingleAnalysis(runNumber) {
     const runButton = row.querySelector('.row-run-btn');
     const tydexButton = row.querySelector('.tydex-btn');
 
-    // Update status to processing
-    statusCell.textContent = 'Processing... ⌛';
+    // --- NEW: Fetch job and old_job for this run ---
+    let jobName = '';
+    let oldJobName = '';
+    try {
+        const rowDataResponse = await fetch(`/api/get-row-data?protocol=${protocol}&runNumber=${runNumber}`);
+        if (rowDataResponse.ok) {
+            const rowDataResult = await rowDataResponse.json();
+            jobName = rowDataResult.data?.job || '';
+            oldJobName = rowDataResult.data?.old_job || '';
+        }
+    } catch (e) {
+        // fallback: leave jobName empty
+    }
+    // --- END NEW ---
+
+    // Show job name in status
+    let jobDisplay = jobName ? jobName : '';
+    if (oldJobName && oldJobName !== '-' && oldJobName !== jobName) {
+        jobDisplay = `${oldJobName} (dependency)`;
+    }
+    statusCell.textContent = jobDisplay
+        ? `Processing: ${jobDisplay} ⌛`
+        : 'Processing... ⌛';
     statusCell.style.color = '#ffc107';
     runButton.disabled = true;
 
